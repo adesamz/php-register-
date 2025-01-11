@@ -1,0 +1,154 @@
+<?php
+// Database connection
+include 'connect.php';
+session_start();
+
+// Check if admin is logged in
+// Uncomment if needed
+// if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
+//     header("Location: admin_login.php");
+//     exit();
+// }
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['action'])) {
+        $action = $_POST['action'];
+
+        if ($action === 'add') {
+            // Add instructor
+            $username = mysqli_real_escape_string($conn, $_POST['username']);
+            $email = mysqli_real_escape_string($conn, $_POST['email']);
+            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+            // Insert instructor with 'instructor' role
+            $sql = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password', 'instructor')";
+            if (mysqli_query($conn, $sql)) {
+                echo "<script>alert('Instructor added successfully.');</script>";
+            } else {
+                echo "Error: " . mysqli_error($conn);
+            }
+        } elseif ($action === 'remove') {
+            // Remove instructor
+            $id = intval($_POST['id']);
+            $sql = "DELETE FROM users WHERE id = $id AND role = 'instructor'";
+            if (mysqli_query($conn, $sql)) {
+                echo "<script>alert('Instructor removed successfully.');</script>";
+            } else {
+                echo "Error: " . mysqli_error($conn);
+            }
+        }
+    }
+}
+
+// Fetch instructors
+$sql = "SELECT id, username, email FROM users WHERE role = 'instructor'";
+$instructors = mysqli_query($conn, $sql);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Instructors</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4a261;
+            color: white;
+        }
+
+        button {
+            padding: 5px 10px;
+            border: none;
+            background-color: #f4a261;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #e76f51;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Instructors</h1>
+
+    <!-- Form to Add Instructor -->
+    <form method="POST" action="">
+        <label for="username">Name:</label>
+        <input type="text" name="username" id="username" required>
+
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password" required>
+
+        <input type="hidden" name="action" value="add">
+        <button type="submit">Add Instructor</button>
+    </form>
+
+    <!-- Table of Instructors -->
+    <h2>Existing Instructors</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (mysqli_num_rows($instructors) > 0): ?>
+                <?php while ($instructor = mysqli_fetch_assoc($instructors)): ?>
+                    <tr>
+                        <td><?php echo $instructor['id']; ?></td>
+                        <td><?php echo htmlspecialchars($instructor['username']); ?></td>
+                        <td><?php echo htmlspecialchars($instructor['email']); ?></td>
+                        <td>
+                            <form method="POST" action="" style="display:inline;">
+                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="id" value="<?php echo $instructor['id']; ?>">
+                                <button type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="4" style="text-align:center;">No instructors found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</body>
+</html>
